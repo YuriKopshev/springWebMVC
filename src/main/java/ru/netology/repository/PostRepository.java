@@ -7,35 +7,43 @@ import java.util.Collection;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
 @Repository
 public class PostRepository {
     private final ConcurrentHashMap<Long, Post> postMap = new ConcurrentHashMap<Long, Post>();
-    private final AtomicLong id = new AtomicLong();
+    private final AtomicLong idCount = new AtomicLong();
 
 
     public Collection<Post> all() {
-        return postMap.values();
+        return postMap.values().stream().filter(post -> !post.isRemoved()).collect(Collectors.toList());
     }
+
 
     public Optional<Post> getById(long id) {
-        return Optional.of(postMap.get(id));
+        final var post = postMap.get(id);
+        if (post != null && post.isRemoved()) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(post);
     }
 
-    public Post save(Post post) {
-        if (post.getId() == 0) {
-            long i = id.incrementAndGet();
-            postMap.put(i, new Post(i, post.getContent()));
 
-        } else if (post.getId() != 0) {
-            Long currentId = post.getId();
-            postMap.put(currentId, new Post(post.getId(), post.getContent()));
-            id.incrementAndGet();
+    public Optional<Post> save(Post post) {
+        long id = post.getId();
+        if (id == 0) {
+            id = idCount.incrementAndGet();
+            post.setId(id);
+        } else {
+            if (!postMap.containsKey(id) || postMap.get(id).isRemoved()) {
+                return Optional.empty();
+            }
         }
-        return post;
+        postMap.put(id, post);
+        return Optional.of(post);
     }
 
     public void removeById(long id) {
-        postMap.remove(id);
+        postMap.get(id).setRemoved(true);
     }
 }
