@@ -5,6 +5,7 @@ import ru.netology.model.Post;
 import ru.netology.service.PostService;
 
 import java.util.Collection;
+import java.util.Optional;
 
 
 @RestController
@@ -22,12 +23,12 @@ public class PostController {
     }
 
     @GetMapping("/{id}")
-    public Post getById(@PathVariable long id) {
+    public Optional<Post> getById(@PathVariable long id) {
         return service.getById(id);
     }
 
     @PostMapping
-    public Post save(@RequestBody Post post) {
+    public Optional<Post> save(@RequestBody Post post) {
         return service.save(post);
     }
 
